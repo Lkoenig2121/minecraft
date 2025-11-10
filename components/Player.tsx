@@ -66,26 +66,28 @@ export default function Player() {
       if (intersects.length > 0) {
         const intersect = intersects[0];
         
+        // Use world position from the intersection point instead of object position
+        const worldPos = new THREE.Vector3();
+        intersect.object.getWorldPosition(worldPos);
+        
         const hitPosition: [number, number, number] = [
-          Math.round(intersect.object.position.x),
-          Math.round(intersect.object.position.y),
-          Math.round(intersect.object.position.z)
+          Math.round(intersect.point.x),
+          Math.round(intersect.point.y),
+          Math.round(intersect.point.z)
         ];
         
-        console.log('Hit position:', hitPosition);
+        console.log('Hit position:', hitPosition, 'World pos:', worldPos);
         
-        // For doors, the mesh is offset by 0.5 in Y, so we need to check both the hit position
-        // and 0.5 blocks below it
+        // Find the door block by checking which door is close to the hit point
         const hitBlock = blocks.find(b => {
-          // Check x and z are close
-          const xMatch = Math.abs(b.position[0] - hitPosition[0]) < 0.6;
-          const zMatch = Math.abs(b.position[2] - hitPosition[2]) < 0.6;
+          if (b.type !== 'door') return false;
           
-          // For doors, check if block is at hit position OR 0.5 below (since doors are offset)
-          const yMatch = Math.abs(b.position[1] - hitPosition[1]) < 1.2 || 
-                        Math.abs(b.position[1] - (hitPosition[1] - 0.5)) < 0.6;
+          // Check if the hit point is within the door's bounds
+          const xMatch = Math.abs(b.position[0] - hitPosition[0]) < 1.5;
+          const zMatch = Math.abs(b.position[2] - hitPosition[2]) < 1.5;
+          const yMatch = Math.abs(b.position[1] - hitPosition[1]) < 1.5;
           
-          return xMatch && zMatch && yMatch && b.type === 'door';
+          return xMatch && zMatch && yMatch;
         });
         
         if (hitBlock) {
@@ -238,23 +240,26 @@ export default function Player() {
         const point = intersect.point;
         const normal = intersect.face?.normal;
         
-        // Find which block was hit
+        // Use the intersection point in world space instead of object position
         const hitPosition: [number, number, number] = [
-          Math.round(intersect.object.position.x),
-          Math.round(intersect.object.position.y),
-          Math.round(intersect.object.position.z)
+          Math.round(intersect.point.x),
+          Math.round(intersect.point.y),
+          Math.round(intersect.point.z)
         ];
         
-        const hitBlock = blocks.find(
-          b => b.position[0] === hitPosition[0] && 
-               b.position[1] === hitPosition[1] && 
-               b.position[2] === hitPosition[2]
-        );
+        // Find the closest block to the hit point
+        const hitBlock = blocks.find(b => {
+          const xMatch = Math.abs(b.position[0] - hitPosition[0]) < 1.0;
+          const yMatch = Math.abs(b.position[1] - hitPosition[1]) < 1.5;
+          const zMatch = Math.abs(b.position[2] - hitPosition[2]) < 1.0;
+          
+          return xMatch && yMatch && zMatch;
+        });
         
         // Left click only - break block
         if (e.button === 0) {
           if (hitBlock) {
-            console.log('⛏️ Breaking block at', hitPosition);
+            console.log('⛏️ Breaking block at', hitPosition, 'Block:', hitBlock.type);
             removeBlock(hitBlock.id);
           }
         }

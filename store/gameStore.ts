@@ -8,7 +8,6 @@ export interface Block {
   type: BlockType;
   id: string;
   isOpen?: boolean; // For doors
-  openedAt?: number; // Timestamp when door was opened
 }
 
 export interface InventoryItem {
@@ -199,11 +198,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     set(state => ({
       blocks: state.blocks.map(block => {
         if (block.id === id && block.type === 'door') {
-          const newIsOpen = !block.isOpen;
           return {
             ...block,
-            isOpen: newIsOpen,
-            openedAt: newIsOpen ? Date.now() : undefined, // Track when opened
+            isOpen: !block.isOpen,
           };
         }
         return block;
